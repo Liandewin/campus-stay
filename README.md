@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CampusStay — student accommodation demo
 
-## Getting Started
+A Next.js 16 demo of a back-office system for a university residence office.
+All data is fictional, generated deterministically in `src/lib/seed.ts`.
 
-First, run the development server:
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's in it
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Page | What you can do |
+| --- | --- |
+| **Dashboard** | Occupancy, pending applications, open maintenance, rent collection and recent activity at a glance |
+| **Residences** | Four properties with occupancy stats; each has a floor-by-floor room map |
+| **Room dialog** | See occupants, allocate a free bed to an applicant, block/unblock a room for maintenance |
+| **Students** | Search and filter residents, see who is behind on rent |
+| **Student profile** | Lease, room, roommates, invoices (mark paid), move room, check out, log an issue |
+| **Applications** | Approve and allocate a bed, waitlist, decline, capture a new application |
+| **Maintenance** | Kanban board of requests: open → in progress → resolved |
+| **Payments** | Invoices by period and status, mark paid, send reminders |
 
-## Learn More
+Changes are kept in `localStorage`, so they survive a reload. Use **Reset demo data**
+in the sidebar to start over. The demo world is pinned to 11 September 2026.
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/                  routes (thin server components)
+  components/views/     page views (client components)
+  components/           shell, modal, room dialog, ticket form, UI primitives
+  lib/seed.ts           deterministic demo data
+  lib/store.ts          reducer + useSyncExternalStore store, persisted to localStorage
+  lib/selectors.ts      derived data (occupancy, balances, statuses)
+```
