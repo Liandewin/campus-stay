@@ -11,15 +11,15 @@ import { toast } from "@/lib/toast";
 import type { Student } from "@/lib/types";
 import { Modal } from "../modal";
 import { TicketForm } from "../ticket-form";
-import { Avatar, Badge, Button, Card, CardHeader, EmptyState, Field, PageHeader, ViewAll, inputClass } from "../ui";
+import { Avatar, Badge, Button, Card, CardHeader, Dot, EmptyState, Field, PageHeader, Status, ViewAll, cx, inputClass } from "../ui";
 
 function Detail({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 border-b border-slate-50 py-3 last:border-0">
       <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" />
       <div className="min-w-0">
-        <dt className="text-xs text-slate-500">{label}</dt>
-        <dd className="break-words text-slate-900">{children}</dd>
+        <dt className="text-[11px] font-semibold tracking-[0.06em] text-slate-400 uppercase">{label}</dt>
+        <dd className="mt-0.5 text-[13px] break-words text-slate-900">{children}</dd>
       </div>
     </div>
   );
@@ -80,20 +80,22 @@ export function StudentDetailView({ id }: { id: string }) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="h-fit">
-          <div className="flex flex-col items-center border-b border-slate-100 p-6 text-center">
+      <div className="grid items-start gap-5 lg:grid-cols-[320px_1fr]">
+        <Card className="overflow-hidden">
+          <div className="flex items-center gap-3.5 border-b border-slate-100 bg-linear-160 from-brand-50 to-white p-[22px]">
             <Avatar name={name} size="lg" />
-            <p className="mt-3 font-semibold text-slate-900">{name}</p>
-            <p className="text-sm text-slate-500">{student.studentNumber}</p>
-            <div className="mt-3 flex gap-2">
-              <Badge tone={active ? "green" : "gray"} dot>
-                {student.status}
-              </Badge>
-              <Badge tone={fundingTone[student.funding]}>{student.funding}</Badge>
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold tracking-tight text-slate-900">{name}</p>
+              <p className="mt-0.5 font-mono text-xs text-slate-500">{student.studentNumber}</p>
+              <div className="mt-2 flex gap-1.5">
+                <Badge tone={active ? "green" : "gray"} dot>
+                  {student.status}
+                </Badge>
+                <Badge tone={fundingTone[student.funding]}>{student.funding}</Badge>
+              </div>
             </div>
           </div>
-          <dl className="space-y-4 p-5 text-sm">
+          <dl className="px-5 pt-1.5 pb-4">
             <Detail icon={Mail} label="Email">
               <a href={`mailto:${student.email}`} className="hover:text-brand-700">
                 {student.email}
@@ -111,7 +113,7 @@ export function StudentDetailView({ id }: { id: string }) {
           </dl>
         </Card>
 
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-5">
           <Card>
             <CardHeader
               title="Accommodation"
@@ -119,8 +121,8 @@ export function StudentDetailView({ id }: { id: string }) {
               action={residence && <ViewAll href={`/residences/${residence.id}`} label="View residence" />}
             />
             {room && residence ? (
-              <div className="p-5">
-                <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <>
+                <dl className="grid grid-cols-2 sm:grid-cols-4">
                   {(
                     [
                       ["Residence", residence.name],
@@ -128,25 +130,25 @@ export function StudentDetailView({ id }: { id: string }) {
                       ["Type", room.type],
                       ["Rent", `${money(room.rent)}/mo`],
                     ] as const
-                  ).map(([label, value]) => (
-                    <div key={label} className="rounded-xl bg-slate-50 px-3 py-2.5">
-                      <dt className="text-xs text-slate-500">{label}</dt>
-                      <dd className="truncate text-sm font-medium text-slate-900">{value}</dd>
+                  ).map(([label, value], i) => (
+                    <div key={label} className={cx("border-slate-50 px-5 py-4", i % 2 === 1 && "border-l", i >= 2 && "max-sm:border-t", i === 2 && "sm:border-l")}>
+                      <dt className="text-[11px] font-semibold tracking-[0.06em] text-slate-400 uppercase">{label}</dt>
+                      <dd className="mt-[5px] truncate text-sm font-semibold text-slate-900">{value}</dd>
                     </div>
                   ))}
                 </dl>
                 {roommates.length > 0 && (
-                  <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="text-slate-500">Roommate:</span>
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3.5 text-[13px]">
+                    <span className="text-[11px] font-semibold tracking-[0.06em] text-slate-400 uppercase">Roommate</span>
                     {roommates.map((r) => (
-                      <Link key={r.id} href={`/students/${r.id}`} className="inline-flex items-center gap-2 rounded-full bg-slate-100 py-1 pr-3 pl-1 hover:bg-slate-200">
+                      <Link key={r.id} href={`/students/${r.id}`} className="inline-flex items-center gap-2 rounded-full bg-slate-50 py-1 pr-3 pl-1 text-slate-700 hover:bg-slate-100">
                         <Avatar name={fullName(r)} size="xs" />
                         {fullName(r)}
                       </Link>
                     ))}
                   </div>
                 )}
-              </div>
+              </>
             ) : (
               <EmptyState title="No room assigned" />
             )}
@@ -155,33 +157,33 @@ export function StudentDetailView({ id }: { id: string }) {
           <Card className="overflow-hidden">
             <CardHeader
               title="Rent & payments"
-              subtitle={
-                balance.total
-                  ? `${money(balance.total)} outstanding${balance.overdue ? ` · ${money(balance.overdue)} overdue` : ""}`
-                  : "All invoices settled"
+              action={
+                <span className={cx("text-xs font-semibold", balance.overdue ? "text-rose-600" : balance.total ? "text-slate-700" : "text-emerald-600")}>
+                  {balance.total
+                    ? `${money(balance.total)} outstanding${balance.overdue ? ` · ${money(balance.overdue)} overdue` : ""}`
+                    : "All invoices settled"}
+                </span>
               }
             />
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <tbody className="divide-y divide-slate-100">
+              <table className="min-w-full text-[13.5px]">
+                <tbody className="divide-y divide-slate-50">
                   {invoices.map((inv) => {
                     const status = invoiceStatus(inv);
                     return (
                       <tr key={inv.id}>
-                        <td className="px-5 py-3">
-                          <p className="font-medium text-slate-900">{fmtPeriod(inv.period)}</p>
-                          <p className="font-mono text-xs text-slate-400">{inv.id}</p>
+                        <td className="px-5 py-[13px]">
+                          <p className="font-semibold text-slate-900">{fmtPeriod(inv.period)}</p>
+                          <p className="mt-px font-mono text-[11.5px] text-slate-400">{inv.id}</p>
                         </td>
-                        <td className="px-5 py-3 tabular-nums">{money(inv.amount)}</td>
-                        <td className="hidden px-5 py-3 text-slate-500 sm:table-cell">Due {fmtDate(inv.dueDate)}</td>
-                        <td className="px-5 py-3">
-                          <Badge tone={invoiceTone[status]} dot>
-                            {status}
-                          </Badge>
+                        <td className="px-5 py-[13px] text-slate-700 tabular-nums">{money(inv.amount)}</td>
+                        <td className="hidden px-5 py-[13px] text-[12.5px] text-slate-500 sm:table-cell">Due {fmtDate(inv.dueDate)}</td>
+                        <td className="px-5 py-[13px]">
+                          <Status tone={invoiceTone[status]}>{status}</Status>
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-5 py-[13px] text-right">
                           {inv.paidAt ? (
-                            <span className="text-xs whitespace-nowrap text-slate-500">Paid {fmtDay(inv.paidAt)}</span>
+                            <span className="text-xs whitespace-nowrap text-slate-400">Paid {fmtDay(inv.paidAt)}</span>
                           ) : (
                             <Button
                               size="sm"
@@ -204,27 +206,28 @@ export function StudentDetailView({ id }: { id: string }) {
           </Card>
 
           <Card>
-            <CardHeader title="Maintenance requests" subtitle={`${tickets.length} logged by this student`} />
+            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
+              <h2 className="text-[15px] font-semibold tracking-tight text-slate-900">Maintenance requests</h2>
+              <span className="rounded-full bg-slate-50 px-2 py-px text-[11px] font-semibold text-slate-550">{tickets.length}</span>
+            </div>
             {tickets.length ? (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-50">
                 {tickets.map((t) => (
-                  <li key={t.id} className="flex items-center gap-3 px-5 py-3">
+                  <li key={t.id} className="flex items-center gap-3 px-5 py-[13px]">
+                    <Dot tone={priorityTone[t.priority]} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {t.category} · {fmtAgo(t.createdAt)}
+                      <p className="truncate text-[13.5px] font-semibold text-slate-900">{t.title}</p>
+                      <p className="mt-px text-[11.5px] text-slate-500">
+                        {t.category} · {t.priority} · {fmtAgo(t.createdAt)}
                         {t.assignee ? ` · ${t.assignee}` : ""}
                       </p>
                     </div>
-                    <Badge tone={priorityTone[t.priority]}>{t.priority}</Badge>
-                    <Badge tone={ticketTone[t.status]} dot>
-                      {t.status}
-                    </Badge>
+                    <Badge tone={ticketTone[t.status]}>{t.status}</Badge>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="px-5 py-6 text-sm text-slate-500">No requests logged.</p>
+              <p className="px-5 py-[22px] text-[13px] text-slate-500">No requests logged for this student.</p>
             )}
           </Card>
         </div>

@@ -9,7 +9,7 @@ import { fullName, getIndexes, roomLabel, studentBalance } from "@/lib/selectors
 import { money } from "@/lib/format";
 import { fundingTone } from "@/lib/tones";
 import type { Funding, Student } from "@/lib/types";
-import { Avatar, Badge, Card, EmptyState, PageHeader, Pagination, SearchInput, Tabs, inputClass } from "../ui";
+import { Avatar, Badge, Card, EmptyState, PageHeader, Pagination, SearchInput, Tabs, eyebrow, inputClass } from "../ui";
 
 const PAGE_SIZE = 15;
 const FUNDING: Funding[] = ["NSFAS", "Bursary", "Self-funded"];
@@ -56,20 +56,11 @@ export function StudentsView() {
 
   return (
     <>
-      <PageHeader title="Students" description={`${groups.Active.length} residents currently housed`} />
-      <Card className="overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 xl:flex-row xl:items-center xl:justify-between">
-          <Tabs
-            tabs={[
-              { id: "Active" as const, label: "Residents", count: groups.Active.length },
-              { id: "Overdue" as const, label: "Rent overdue", count: groups.Overdue.length },
-              { id: "Checked out" as const, label: "Checked out", count: groups["Checked out"].length },
-            ]}
-            value={group}
-            onChange={withReset(setGroup)}
-          />
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <SearchInput value={query} onChange={withReset(setQuery)} placeholder="Search name, number, course…" />
+      <PageHeader
+        title="Students"
+        description={`${groups.Active.length} residents housed · ${groups.Overdue.length} behind on rent`}
+        actions={
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <select aria-label="Residence" className={`${inputClass} sm:w-44`} value={residence} onChange={(e) => withReset(setResidence)(e.target.value)}>
               <option value="all">All residences</option>
               {state.residences.map((r) => (
@@ -84,51 +75,70 @@ export function StudentsView() {
                 <option key={f}>{f}</option>
               ))}
             </select>
+            <SearchInput value={query} onChange={withReset(setQuery)} placeholder="Name, number, course…" />
           </div>
+        }
+      />
+      <Card className="overflow-hidden">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <Tabs
+            tabs={[
+              { id: "Active" as const, label: "Residents", count: groups.Active.length },
+              { id: "Overdue" as const, label: "Rent overdue", count: groups.Overdue.length },
+              { id: "Checked out" as const, label: "Checked out", count: groups["Checked out"].length },
+            ]}
+            value={group}
+            onChange={withReset(setGroup)}
+          />
         </div>
 
         {visible.length === 0 ? (
           <EmptyState icon={Users} title="No students found" description="Try a different search or clear the filters." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <table className="min-w-full text-[13.5px]">
+              <thead className={`bg-[#fafbfb] text-left ${eyebrow}`}>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Student</th>
-                  <th className="hidden px-4 py-3 font-medium md:table-cell">Course</th>
-                  <th className="px-4 py-3 font-medium">Room</th>
-                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Funding</th>
-                  <th className="px-4 py-3 text-right font-medium">Balance</th>
-                  <th className="w-8" />
+                  <th className="px-5 py-[11px] font-semibold">Student</th>
+                  <th className="hidden px-5 py-[11px] font-semibold md:table-cell">Course</th>
+                  <th className="px-5 py-[11px] font-semibold">Room</th>
+                  <th className="hidden px-5 py-[11px] font-semibold sm:table-cell">Funding</th>
+                  <th className="px-5 py-[11px] text-right font-semibold">Balance</th>
+                  <th className="w-9" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-50">
                 {visible.map((s) => {
                   const balance = studentBalance(ix, s.id);
                   return (
-                    <tr key={s.id} onClick={() => router.push(`/students/${s.id}`)} className="cursor-pointer hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
+                    <tr
+                      key={s.id}
+                      // The name is already a link; only handle clicks elsewhere in the row.
+                      onClick={(e) => !(e.target as HTMLElement).closest("a") && router.push(`/students/${s.id}`)}
+                      className="cursor-pointer hover:bg-[#fafbfb]"
+                    >
+                      <td className="px-5 py-[11px]">
+                        <div className="flex items-center gap-[11px]">
                           <Avatar name={fullName(s)} size="sm" />
                           <div className="min-w-0">
-                            <Link href={`/students/${s.id}`} className="block truncate font-medium text-slate-900 hover:text-brand-700">
+                            <Link href={`/students/${s.id}`} className="block truncate font-semibold text-slate-900 hover:text-brand-700">
                               {fullName(s)}
                             </Link>
-                            <p className="truncate text-xs text-slate-500">{s.studentNumber}</p>
+                            <p className="truncate font-mono text-[11.5px] text-slate-400">{s.studentNumber}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="hidden px-4 py-3 md:table-cell">
+                      <td className="hidden px-5 py-[11px] md:table-cell">
                         <p className="text-slate-700">{s.course}</p>
-                        <p className="text-xs text-slate-500">Year {s.year}</p>
+                        <p className="text-[11.5px] text-slate-400">Year {s.year}</p>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">{roomLabel(ix, s.roomId)}</td>
-                      <td className="hidden px-4 py-3 sm:table-cell">
+                      <td className="whitespace-nowrap px-5 py-[11px] text-slate-700">{roomLabel(ix, s.roomId)}</td>
+                      <td className="hidden px-5 py-[11px] sm:table-cell">
                         <Badge tone={fundingTone[s.funding]}>{s.funding}</Badge>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                      <td className="whitespace-nowrap px-5 py-[11px] text-right font-semibold tabular-nums">
                         {balance.overdue > 0 ? (
-                          <span className="font-medium text-rose-600">{money(balance.total)} overdue</span>
+                          <span className="text-rose-600">{money(balance.total)} overdue</span>
                         ) : balance.total > 0 ? (
                           <span className="text-slate-700">{money(balance.total)} due</span>
                         ) : (

@@ -11,7 +11,7 @@ import { applicationTone, fundingTone } from "@/lib/tones";
 import { toast } from "@/lib/toast";
 import type { Application, ApplicationStatus, Funding, Room } from "@/lib/types";
 import { Modal } from "../modal";
-import { Avatar, Badge, Button, Card, EmptyState, Field, PageHeader, Tabs, buttonStyles, inputClass } from "../ui";
+import { Avatar, Badge, Button, Card, EmptyState, Field, PageHeader, Tabs, buttonStyles, cx, eyebrow, inputClass } from "../ui";
 
 const TABS: ApplicationStatus[] = ["Pending", "Waitlisted", "Approved", "Declined"];
 
@@ -44,17 +44,19 @@ export function ApplicationsView() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-        <span className="mr-1 text-slate-500">Free beds right now</span>
-        {ROOM_TYPES.map((t) => (
-          <Badge key={t} tone={vacancies[t] ? "green" : "gray"}>
-            {t} · {vacancies[t]}
-          </Badge>
-        ))}
+      <div className="mb-5 flex flex-wrap items-center gap-2.5 rounded-[14px] border border-slate-200 bg-white px-4 py-3">
+        <span className={eyebrow}>Free beds now</span>
+        <div className="flex flex-wrap gap-1.5">
+          {ROOM_TYPES.map((t) => (
+            <Badge key={t} tone={vacancies[t] ? "green" : "gray"} dot>
+              {t} · {vacancies[t]}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       <Card>
-        <div className="border-b border-slate-100 p-4">
+        <div className="border-b border-slate-100 px-4 py-3">
           <Tabs
             tabs={TABS.map((t) => ({ id: t, label: t, count: state.applications.filter((a) => a.status === t).length }))}
             value={tab}
@@ -65,7 +67,7 @@ export function ApplicationsView() {
         {list.length === 0 ? (
           <EmptyState icon={ClipboardList} title={`No ${tab.toLowerCase()} applications`} description="New applications will show up here." />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-slate-50">
             {list.map((app) => {
               const res = ix.residences.get(app.preferredResidenceId);
               const matching = sumFreeBeds(
@@ -73,36 +75,36 @@ export function ApplicationsView() {
                 ix,
               );
               return (
-                <li key={app.id} className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center">
-                  <div className="flex min-w-0 flex-1 gap-3">
+                <li key={app.id} className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:gap-5">
+                  <div className="flex min-w-0 flex-[1.4] items-center gap-3">
                     <Avatar name={fullName(app)} />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-slate-900">{fullName(app)}</p>
+                        <p className="text-sm font-semibold text-slate-900">{fullName(app)}</p>
                         <Badge tone={fundingTone[app.funding]}>{app.funding}</Badge>
                         {tab !== app.status && <Badge tone={applicationTone[app.status]}>{app.status}</Badge>}
                       </div>
-                      <p className="truncate text-sm text-slate-500">
+                      <p className="mt-0.5 truncate text-[12.5px] text-slate-500">
                         {app.course} · Year {app.year} · {app.studentNumber}
                       </p>
-                      {app.note && <p className="mt-1 text-xs text-slate-500 italic">{app.note}</p>}
+                      {app.note && <p className="mt-[3px] text-[11.5px] text-slate-400 italic">{app.note}</p>}
                     </div>
                   </div>
 
-                  <div className="text-sm lg:w-52">
-                    <p className="text-xs text-slate-500">Prefers</p>
-                    <p className="font-medium text-slate-800">{res?.name}</p>
-                    <p className={matching ? "text-xs text-emerald-600" : "text-xs text-amber-600"}>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold tracking-[0.06em] text-slate-400 uppercase">Prefers</p>
+                    <p className="mt-[3px] text-[13.5px] font-semibold text-slate-700">{res?.name}</p>
+                    <p className={cx("mt-px text-xs", matching ? "text-emerald-600" : "text-amber-600")}>
                       {app.preferredRoomType} · {matching ? `${matching} matching bed${matching > 1 ? "s" : ""} free` : "none free"}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 lg:w-24">
-                    <Clock className="size-3.5" />
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 lg:w-[110px] lg:shrink-0">
+                    <Clock className="size-[13px]" />
                     {fmtAgo(app.submittedAt)}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 lg:w-64 lg:justify-end">
+                  <div className="flex flex-wrap gap-2 lg:w-60 lg:shrink-0 lg:justify-end">
                     {(app.status === "Pending" || app.status === "Waitlisted") && (
                       <>
                         <Button size="sm" onClick={() => setApprovingId(app.id)}>

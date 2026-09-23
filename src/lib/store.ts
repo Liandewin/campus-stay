@@ -8,6 +8,8 @@ import { fullName, getIndexes, roomLabel } from "./selectors";
 // made in the demo are persisted to localStorage so they survive reloads.
 
 const STORAGE_KEY = "campusstay-demo-v1";
+/** Leases created in the demo run to the end of the academic year. */
+const LEASE_END = "2026-11-30";
 
 export type Action =
   | { type: "approveApplication"; id: string; roomId: string }
@@ -56,7 +58,7 @@ function reducer(state: State, action: Action): State {
         funding: app.funding,
         roomId: room.id,
         leaseStart: TODAY,
-        leaseEnd: "2026-11-30",
+        leaseEnd: LEASE_END,
         status: "Active",
       };
       const invoice: Invoice = {
@@ -144,7 +146,14 @@ function reducer(state: State, action: Action): State {
       return log(
         {
           ...state,
-          students: state.students.map((s) => (s.id === student.id ? { ...s, roomId: action.roomId, status: "Active" } : s)),
+          students: state.students.map((s) =>
+            s.id !== student.id
+              ? s
+              : student.status === "Active"
+                ? { ...s, roomId: action.roomId }
+                : // Re-admission starts a fresh lease; the old one ended at checkout.
+                  { ...s, roomId: action.roomId, status: "Active", leaseStart: TODAY, leaseEnd: LEASE_END },
+          ),
         },
         "room",
         `${fullName(student)} ${student.status === "Active" ? "moved" : "re-admitted"} to ${roomLabel(ix, action.roomId)}`,
