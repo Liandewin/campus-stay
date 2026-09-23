@@ -286,7 +286,7 @@ function GlobalSearch() {
 function TopBar({ onMenu }: { onMenu: () => void }) {
   const [crumb, title] = crumbFor(usePathname());
   return (
-    <header className="sticky top-0 z-30 flex h-[60px] items-center gap-3 border-b border-slate-200 bg-white/88 px-4 backdrop-blur-sm sm:gap-5 lg:px-7">
+    <header className="sticky top-0 z-30 flex h-[60px] items-center gap-3 border-b border-slate-200 bg-white/88 px-3 backdrop-blur-sm sm:gap-5 sm:px-4 lg:px-5">
       <button
         type="button"
         onClick={onMenu}
@@ -331,7 +331,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="lg:pl-62">
         <TopBar onMenu={() => setMenuOpen(true)} />
-        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:p-7">{children}</div>
+        <div className="px-3 py-5 sm:px-4 lg:px-5 lg:py-6">{children}</div>
       </main>
     </div>
   );
