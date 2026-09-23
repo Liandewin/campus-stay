@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Clock, Hammer, MapPin, Plus, Timer, TriangleAlert, User, Wrench } from "lucide-react";
+import { Clock, MapPin, Plus, User, Wrench } from "lucide-react";
 import { dispatch, useStore } from "@/lib/store";
 import { PRIORITIES, PRIORITY_RANK, fullName, getIndexes, roomLabel, type Indexes } from "@/lib/selectors";
 import { daysBetween, fmtAgo, sum } from "@/lib/format";
@@ -11,13 +11,20 @@ import { toast } from "@/lib/toast";
 import type { Priority, Ticket, TicketStatus } from "@/lib/types";
 import { Modal } from "../modal";
 import { TicketForm } from "../ticket-form";
-import { Badge, Button, PageHeader, SearchInput, StatCard, cx, inputClass } from "../ui";
+import { Badge, Button, PageHeader, SearchInput, StatStrip, cx, inputClass } from "../ui";
 
 const COLUMNS: { status: TicketStatus; hint: string; dot: string }[] = [
   { status: "Open", hint: "Waiting for triage", dot: "bg-rose-500" },
   { status: "In progress", hint: "Assigned to a technician", dot: "bg-amber-500" },
   { status: "Resolved", hint: "Recently closed", dot: "bg-emerald-500" },
 ];
+
+const EDGE: Record<Priority, string> = {
+  Urgent: "bg-rose-500",
+  High: "bg-amber-500",
+  Medium: "bg-sky-500",
+  Low: "bg-slate-400",
+};
 
 export function MaintenanceView() {
   const state = useStore();
@@ -52,20 +59,20 @@ export function MaintenanceView() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Open requests" value={open.length} hint={`${open.filter((t) => t.status === "Open").length} not yet picked up`} icon={Wrench} />
-        <StatCard
-          label="Urgent & high"
-          value={open.filter((t) => PRIORITY_RANK[t.priority] <= PRIORITY_RANK.High).length}
-          hint="Open, needing fast action"
-          icon={TriangleAlert}
-          tone="red"
-        />
-        <StatCard label="Rooms blocked" value={state.rooms.filter((r) => r.maintenance).length} hint="Closed for repairs" icon={Hammer} tone="amber" />
-        <StatCard label="Avg. time to resolve" value={`${avgDays.toFixed(1)} days`} hint={`Across ${resolved.length} resolved requests`} icon={Timer} tone="green" />
-      </div>
+      <StatStrip
+        items={[
+          { label: "Open requests", value: open.length, hint: `${open.filter((t) => t.status === "Open").length} not yet picked up` },
+          {
+            label: "Urgent & high",
+            value: open.filter((t) => PRIORITY_RANK[t.priority] <= PRIORITY_RANK.High).length,
+            hint: "Open, needing fast action",
+          },
+          { label: "Rooms blocked", value: state.rooms.filter((r) => r.maintenance).length, hint: "Closed for repairs" },
+          { label: "Avg. time to resolve", value: `${avgDays.toFixed(1)} days`, hint: `Across ${resolved.length} resolved requests` },
+        ]}
+      />
 
-      <div className="mt-6 mb-4 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-5 mb-5 flex flex-col gap-2 sm:flex-row">
         <SearchInput value={query} onChange={setQuery} placeholder="Search requests…" />
         <select aria-label="Residence" className={`${inputClass} sm:w-48`} value={residence} onChange={(e) => setResidence(e.target.value)}>
           <option value="all">All residences</option>
@@ -83,7 +90,7 @@ export function MaintenanceView() {
         </select>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid items-start gap-5 lg:grid-cols-3">
         {COLUMNS.map(({ status, hint, dot }) => {
           const items = filtered
             .filter((t) => t.status === status)
@@ -93,18 +100,18 @@ export function MaintenanceView() {
                 : PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] || a.createdAt.localeCompare(b.createdAt),
             );
           return (
-            <section key={status} className="rounded-2xl bg-slate-100/80 p-3">
-              <header className="flex items-center gap-2 px-1.5 pt-1 pb-3">
-                <span className={cx("size-2 rounded-full", dot)} />
+            <section key={status}>
+              <header className="flex items-center gap-[9px] px-1 pb-3">
+                <span className={cx("size-2 rounded-[3px]", dot)} />
                 <h2 className="text-sm font-semibold text-slate-900">{status}</h2>
-                <span className="rounded-full bg-white px-2 text-xs font-medium text-slate-600 tabular-nums">{items.length}</span>
-                <span className="ml-auto text-xs text-slate-500">{hint}</span>
+                <span className="rounded-full border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-550 tabular-nums">{items.length}</span>
+                <span className="ml-auto text-[11.5px] text-slate-400">{hint}</span>
               </header>
               <div className="space-y-3">
                 {items.map((t) => (
                   <TicketCard key={t.id} ticket={t} ix={ix} />
                 ))}
-                {items.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">Nothing here</p>}
+                {items.length === 0 && <p className="rounded-[14px] border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">Nothing here</p>}
               </div>
             </section>
           );
@@ -128,17 +135,21 @@ function TicketCard({ ticket: t, ix }: { ticket: Ticket; ix: Indexes }) {
   }
 
   return (
-    <article className={cx("rounded-xl border border-slate-200 bg-white p-4 shadow-xs", t.status === "Resolved" && "opacity-80")}>
+    <article
+      className={cx(
+        "relative overflow-hidden rounded-[14px] border border-slate-200 bg-white pt-4 pr-4 pb-3.5 pl-[18px] shadow-card",
+        t.status === "Resolved" && "opacity-75",
+      )}
+    >
+      <span className={cx("absolute inset-y-0 left-0 w-[3px]", EDGE[t.priority])} />
       <div className="flex items-center gap-2">
-        <Badge tone={priorityTone[t.priority]} dot>
-          {t.priority}
-        </Badge>
-        <span className="text-xs text-slate-500">{t.category}</span>
-        <span className="ml-auto font-mono text-[11px] text-slate-400">{t.id}</span>
+        <Badge tone={priorityTone[t.priority]}>{t.priority}</Badge>
+        <span className="text-[11.5px] text-slate-500">{t.category}</span>
+        <span className="ml-auto font-mono text-[11px] text-[#b3bcbe]">{t.id}</span>
       </div>
-      <h3 className="mt-2.5 font-medium text-slate-900">{t.title}</h3>
-      {t.description && <p className="mt-1 line-clamp-2 text-sm text-slate-500">{t.description}</p>}
-      <dl className="mt-3 space-y-1.5 text-xs text-slate-500">
+      <h3 className="mt-2.5 text-[14.5px] font-semibold tracking-tight text-slate-900">{t.title}</h3>
+      {t.description && <p className="mt-1 line-clamp-2 text-[12.5px] leading-normal text-slate-500">{t.description}</p>}
+      <dl className="mt-3 space-y-1.5 text-[11.5px] text-slate-500">
         <div className="flex items-center gap-1.5">
           <MapPin className="size-3.5 shrink-0" />
           {room ? (
@@ -159,25 +170,23 @@ function TicketCard({ ticket: t, ix }: { ticket: Ticket; ix: Indexes }) {
             "Residence office"
           )}
         </div>
-        {t.assignee && (
-          <div className="flex items-center gap-1.5">
-            <Wrench className="size-3.5 shrink-0" />
-            <span className="truncate">{t.assignee}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1.5">
+          <Wrench className="size-3.5 shrink-0" />
+          <span className="truncate">{t.assignee ?? "Unassigned"}</span>
+        </div>
         <div className="flex items-center gap-1.5">
           <Clock className="size-3.5 shrink-0" />
           Reported {fmtAgo(t.createdAt).toLowerCase()}
           {t.resolvedAt && ` · resolved ${fmtAgo(t.resolvedAt).toLowerCase()}`}
         </div>
       </dl>
-      <div className="mt-3.5 flex gap-2 border-t border-slate-100 pt-3">
+      <div className="mt-3.5 flex gap-2 border-t border-slate-50 pt-3">
         {t.status === "Open" && (
           <>
             <Button size="sm" onClick={() => move("In progress", `${t.title} assigned`)}>
               Start work
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => move("Resolved", `${t.title} resolved`)}>
+            <Button size="sm" variant="secondary" onClick={() => move("Resolved", `${t.title} resolved`)}>
               Resolve
             </Button>
           </>
@@ -188,7 +197,7 @@ function TicketCard({ ticket: t, ix }: { ticket: Ticket; ix: Indexes }) {
           </Button>
         )}
         {t.status === "Resolved" && (
-          <Button size="sm" variant="ghost" onClick={() => move("Open", `${t.title} reopened`)}>
+          <Button size="sm" variant="secondary" onClick={() => move("Open", `${t.title} reopened`)}>
             Reopen
           </Button>
         )}

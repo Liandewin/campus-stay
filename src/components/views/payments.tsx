@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BellRing, CircleCheck, Receipt, TrendingUp, TriangleAlert, Wallet } from "lucide-react";
+import { BellRing, CircleCheck } from "lucide-react";
 import { dispatch, useStore } from "@/lib/store";
 import { fullName, getIndexes, invoiceStatus, roomLabel, type InvoiceStatus } from "@/lib/selectors";
 import { CURRENT_PERIOD, fmtDate, fmtDay, fmtPeriod, money, pct, sum } from "@/lib/format";
 import { invoiceTone } from "@/lib/tones";
 import { toast } from "@/lib/toast";
 import type { Invoice } from "@/lib/types";
-import { Avatar, Badge, Button, Card, EmptyState, PageHeader, Pagination, SearchInput, StatCard, Tabs, inputClass } from "../ui";
+import { Avatar, Button, Card, EmptyState, PageHeader, Pagination, SearchInput, StatStrip, Status, Tabs, eyebrow, inputClass } from "../ui";
 
 const PAGE_SIZE = 15;
 const STATUS_ORDER: Record<InvoiceStatus, number> = { Overdue: 0, Due: 1, Paid: 2 };
@@ -88,33 +88,27 @@ export function PaymentsView() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label={`Collected · ${fmtPeriod(CURRENT_PERIOD)}`}
-          value={money(collected)}
-          hint={`${pct(billed ? collected / billed : 0)} of ${money(billed)} billed`}
-          icon={Wallet}
-        />
-        <StatCard label="Outstanding" value={money(sum(unpaid, (i) => i.amount))} hint={`${unpaid.length} unpaid invoices`} icon={Receipt} tone="blue" />
-        <StatCard
-          label="Overdue"
-          value={money(sum(overdue, (i) => i.amount))}
-          hint={`${overdueStudents.size} students behind on rent`}
-          icon={TriangleAlert}
-          tone="red"
-        />
-        <StatCard label="Collection rate" value={pct(billedAll ? paidAll / billedAll : 0)} hint="All invoices this semester" icon={TrendingUp} tone="green" />
-      </div>
+      <StatStrip
+        items={[
+          {
+            label: `Collected · ${fmtPeriod(CURRENT_PERIOD)}`,
+            value: money(collected),
+            hint: `${pct(billed ? collected / billed : 0)} of ${money(billed)} billed`,
+          },
+          { label: "Outstanding", value: money(sum(unpaid, (i) => i.amount)), hint: `${unpaid.length} unpaid invoices` },
+          { label: "Overdue", value: money(sum(overdue, (i) => i.amount)), hint: `${overdueStudents.size} students behind on rent`, tone: "red" },
+          { label: "Collection rate", value: pct(billedAll ? paidAll / billedAll : 0), hint: "All invoices this semester" },
+        ]}
+      />
 
-      <Card className="mt-6 overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 xl:flex-row xl:items-center xl:justify-between">
+      <Card className="mt-5 overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
           <Tabs
             tabs={(["All", "Overdue", "Due", "Paid"] as const).map((s) => ({ id: s, label: s, count: counts[s] }))}
             value={status}
             onChange={withReset(setStatus)}
           />
           <div className="flex flex-col gap-2 sm:flex-row">
-            <SearchInput value={query} onChange={withReset(setQuery)} placeholder="Search student, invoice, room…" />
             <select aria-label="Billing period" className={`${inputClass} sm:w-40`} value={period} onChange={(e) => withReset(setPeriod)(e.target.value)}>
               <option value="all">All periods</option>
               {periods.map((p) => (
@@ -123,6 +117,7 @@ export function PaymentsView() {
                 </option>
               ))}
             </select>
+            <SearchInput value={query} onChange={withReset(setQuery)} placeholder="Student, invoice, room…" />
           </div>
         </div>
 
@@ -130,52 +125,50 @@ export function PaymentsView() {
           <EmptyState icon={CircleCheck} title="No invoices match" description="Try another status, period or search." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <table className="min-w-full text-[13.5px]">
+              <thead className={`bg-[#fafbfb] text-left ${eyebrow}`}>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Student</th>
-                  <th className="hidden px-4 py-3 font-medium md:table-cell">Invoice</th>
-                  <th className="px-4 py-3 text-right font-medium">Amount</th>
-                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Due</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-5 py-[11px] font-semibold">Student</th>
+                  <th className="hidden px-5 py-[11px] font-semibold md:table-cell">Invoice</th>
+                  <th className="px-5 py-[11px] text-right font-semibold">Amount</th>
+                  <th className="hidden px-5 py-[11px] font-semibold sm:table-cell">Due</th>
+                  <th className="px-5 py-[11px] font-semibold">Status</th>
+                  <th className="px-5 py-[11px]" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-50">
                 {visible.map((inv) => {
                   const s = ix.students.get(inv.studentId);
                   const st = invoiceStatus(inv);
                   return (
-                    <tr key={inv.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
+                    <tr key={inv.id} className="hover:bg-[#fafbfb]">
+                      <td className="px-5 py-[11px]">
                         {s ? (
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-[11px]">
                             <Avatar name={fullName(s)} size="sm" />
                             <div className="min-w-0">
-                              <Link href={`/students/${s.id}`} className="block truncate font-medium text-slate-900 hover:text-brand-700">
+                              <Link href={`/students/${s.id}`} className="block truncate font-semibold text-slate-900 hover:text-brand-700">
                                 {fullName(s)}
                               </Link>
-                              <p className="truncate text-xs text-slate-500">{roomLabel(ix, s.roomId)}</p>
+                              <p className="truncate text-[11.5px] text-slate-400">{roomLabel(ix, s.roomId)}</p>
                             </div>
                           </div>
                         ) : (
                           "Unknown student"
                         )}
                       </td>
-                      <td className="hidden px-4 py-3 md:table-cell">
+                      <td className="hidden px-5 py-[11px] md:table-cell">
                         <p className="text-slate-700">{fmtPeriod(inv.period)}</p>
-                        <p className="font-mono text-xs text-slate-400">{inv.id}</p>
+                        <p className="font-mono text-[11.5px] text-slate-400">{inv.id}</p>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium tabular-nums">{money(inv.amount)}</td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 text-slate-500 sm:table-cell">{fmtDate(inv.dueDate)}</td>
-                      <td className="px-4 py-3">
-                        <Badge tone={invoiceTone[st]} dot>
-                          {st}
-                        </Badge>
+                      <td className="px-5 py-[11px] text-right font-semibold text-slate-900 tabular-nums">{money(inv.amount)}</td>
+                      <td className="hidden whitespace-nowrap px-5 py-[11px] text-slate-500 sm:table-cell">{fmtDate(inv.dueDate)}</td>
+                      <td className="px-5 py-[11px]">
+                        <Status tone={invoiceTone[st]}>{st}</Status>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <td className="whitespace-nowrap px-5 py-[11px] text-right">
                         {inv.paidAt ? (
-                          <span className="text-xs text-slate-500">Paid {fmtDay(inv.paidAt)}</span>
+                          <span className="text-xs text-slate-400">Paid {fmtDay(inv.paidAt)}</span>
                         ) : (
                           <div className="flex justify-end gap-1">
                             {st === "Overdue" && (
